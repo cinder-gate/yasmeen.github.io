@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red String: a graph that remembers why | Yasmeen Roumie</title>
+<meta name="description" content="How I built Red String, an agent-run pitch pipeline on FalkorDB that traces every decision to its source and stops lookalike content, by directing a team of AI agents.">
+<meta property="og:title" content="Red String: a graph that remembers why"><meta property="og:description" content="How I built Red String, an agent-run pitch pipeline on FalkorDB that traces every decision to its source and stops lookalike content, by directing a team of AI agents."><meta property="og:type" content="article">
+<style>body{font-family:Georgia,serif;max-width:680px;margin:40px auto;padding:0 20px;line-height:1.65;color:#222}h1{font-size:2em;line-height:1.2}h2{margin-top:2em}a{color:#0b57d0}code{background:#f2f2f2;padding:1px 4px;border-radius:3px}pre{background:#f2f2f2;padding:12px;overflow:auto}.back{font-family:sans-serif;font-size:14px}</style></head>
+<body><p class="back"><a href="/">&larr; Yasmeen Roumie</a></p>
+<article>
+<h1>Red String: a graph that remembers why</h1>
+<p>Every decision an agent makes should come with a thread you can pull.</p>
+<p>That idea became Red String, my project for Graph Hacks, the WeMakeDevs x FalkorDB hackathon.</p>
+<h2>What I built, and why a graph</h2>
+<p>Red String is pipeline software for small creative agencies that win clients by doing the work first. Its agents screen local businesses, research and audit each one, and pitch with spec posts made for that business.</p>
+<p>The hard part of that job isn't writing a post. It's knowing who will see it. If two of your clients reach the same parents in the same neighborhood, their content should never look alike. Businesses target audiences, audiences overlap, and posts use techniques that are rare or common. A graph holds that naturally, and the answer often sits two or three hops away.</p>
+<p>The second reason is memory. Every agent write also records a Decision node: who decided, and based on what. So any answer in the app can be traced back to its sources. I call those traces threads, which is where the name comes from.</p>
+<h2>How the pieces work</h2>
+<p>FalkorDB is the core. Each business gets its own private graph. A shared agency graph holds only what's needed to compare clients, including fingerprints: the list of techniques a draft uses, with no copy, so client work stays private.</p>
+<p>Seven named Cypher queries do the work. They project a draft's fingerprint, find each business's signature techniques, check new leads against signed clients through overlapping audiences, check drafts for lookalikes, find open territory, trace decisions to their sources, and find drafts left stale when a goal changes.</p>
+<p>Agents never write raw Cypher. Eight agents and one human board share the work, and each agent can only call the tools its job needs. The tools are also served over MCP.</p>
+<p>The lookalike check, Double Take, is the part I care about most. It scores a draft by how much its rare techniques overlap with another business's, times how much their audiences overlap. At 0.35 the draft is blocked, and the agents revise it using techniques no nearby business has claimed.</p>
+<p>You can see it three ways: the Studio, the agency's own dashboard; Analysis, which shows the math and the Cypher behind every check; and FalkorDB Browser, for the raw graph.</p>
+<p>The 14 businesses are invented. The 251 reference videos and the research findings are real, and the README says exactly which is which.</p>
+<h2>How I built it with AI agents</h2>
+<p>I didn't write the code for Red String. My job was to explain the problem, say why it mattered, and keep pushing until the product matched what I had in my head.</p>
+<p>Most of my prompts were spoken. I use Wispr Flow to dictate, so a prompt was often a few minutes of thinking out loud about who this is for and what felt wrong. Then I let the agents unpack it and work out what to do.</p>
+<p>Claude Code built the first working version. After that, Devin did most of the feature and interface work through pull requests, and I used Claude to review each one. For the look, I used Claude Design to mock up a redesign and reacted to it. Some of my feedback was taste, like a heading font that felt too aggressive or colors that felt cold. More of it was about whether the product made sense. Can you tell what needs a decision? Can you see why a draft was blocked? I kept pulling the work back from how it looked to what it did.</p>
+<p>What surprised me was how much went wrong while the tests stayed green.</p>
+<p>Partway through, I had Claude audit the codebase. All 60 tests passed, yet the audit reproduced 21 problems against a running FalkorDB. A few of them:</p>
+<ul>
+<li>Checking a blocked draft a second time cleared it.</li>
+<li>Padding a draft with common techniques could drop its score from 1.0 to 0.325, under the threshold.</li>
+<li>In Claude mode, the Auditor agent never saw any posts.</li>
+<li>Agents could call tools outside their role.</li>
+</ul>
+<p>Claude filed these as GitHub issues in priority order. Devin fixed them, and Claude checked each fix before I merged it.</p>
+<p>The fixes went wrong too. One tool's schema would likely have broken the first step of Claude mode, and the next fix gave it the wrong shape. Every test passed both times, because the offline agents never touch those schemas. That led to a scripted end-to-end test of Claude mode, and the suite grew from 60 tests to 116.</p>
+<p>Then Devin ran the whole demo live in Claude mode against the real API. It finished, and still found a bug: one rewritten draft lost its link to the draft it replaced, because the model skipped an optional field. The fix was to stop asking the model for things the pipeline already knows.</p>
+<p>My takeaway is that agents are fast at writing code and good at checking each other. Deciding what matters, what to merge, and whether the product is clear still came down to me.</p>
+<h2>What I would do next</h2>
+<ul>
+<li>Check every research source by hand.</li>
+<li>Run Claude mode on a larger set of leads.</li>
+<li>Try Red String with a real agency's history instead of a synthetic world.</li>
+</ul>
+<h2>Links</h2>
+<ul>
+<li>Code: <a href="https://github.com/yasmeen/redstring">github.com/yasmeen/redstring</a></li>
+<li>Live demo: <a href="https://redstring-production-84af.up.railway.app">redstring-production-84af.up.railway.app</a> (read-only)</li>
+</ul>
+</article></body></html>
