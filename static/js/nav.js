@@ -5,6 +5,12 @@
 // hidden, and this script inverts that. With JS off the nav stays a stacked
 // list of real links rather than a dead button hiding an unreachable menu.
 (function () {
+  // Footer copyright year follows the visitor's clock, so it never goes stale.
+  var year = String(new Date().getFullYear());
+  document.querySelectorAll('[data-year]').forEach(function (el) {
+    el.textContent = year;
+  });
+
   var toggle = document.querySelector('[data-nav-toggle]');
   var menu = document.querySelector('[data-nav-menu]');
   if (!toggle || !menu) return;
